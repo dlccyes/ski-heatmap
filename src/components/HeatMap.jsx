@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.heat';
@@ -17,6 +17,9 @@ export function HeatMap({ trackData }) {
   const baseLayersRef = useRef({});
   const overlayLayersRef = useRef({});
   const skiOverlayRef = useRef(null);
+  const [heatmapOpacity, setHeatmapOpacity] = useState(0.7);
+  const [pointIntensity, setPointIntensity] = useState(0.2);
+  const previousTrackDataLengthRef = useRef(0);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -98,38 +101,44 @@ export function HeatMap({ trackData }) {
       }, 100);
     }
 
-    if (heatLayerRef.current && mapInstanceRef.current) {
-      mapInstanceRef.current.removeLayer(heatLayerRef.current);
-      heatLayerRef.current = null;
-    }
-
     const allPoints = trackData.flatMap(track => track.points);
+    const trackDataChanged = allPoints.length !== previousTrackDataLengthRef.current;
     
     if (allPoints.length > 0 && mapInstanceRef.current) {
-      const heatPoints = allPoints.map(point => [point.lat, point.lon, 1]);
+      const heatPoints = allPoints.map(point => [point.lat, point.lon, pointIntensity]);
+      const maxIntensity = Math.max(10, Math.ceil(allPoints.length / 100));
+
+      if (heatLayerRef.current && mapInstanceRef.current) {
+        mapInstanceRef.current.removeLayer(heatLayerRef.current);
+        heatLayerRef.current = null;
+      }
 
       heatLayerRef.current = L.heatLayer(heatPoints, {
-        radius: 20,
-        blur: 15,
+        radius: 25,
+        blur: 20,
         maxZoom: 17,
-        max: 1.0,
+        max: maxIntensity,
         gradient: {
           0.0: 'blue',
-          0.5: 'cyan',
-          0.7: 'lime',
-          0.9: 'yellow',
+          0.2: 'cyan',
+          0.4: 'lime',
+          0.6: 'yellow',
+          0.8: 'orange',
           1.0: 'red'
         }
       }).addTo(mapInstanceRef.current);
 
-      const bounds = allPoints.reduce((acc, point) => {
-        return [
-          [Math.min(acc[0][0], point.lat), Math.min(acc[0][1], point.lon)],
-          [Math.max(acc[1][0], point.lat), Math.max(acc[1][1], point.lon)]
-        ];
-      }, [[allPoints[0].lat, allPoints[0].lon], [allPoints[0].lat, allPoints[0].lon]]);
-      
-      mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
+      if (trackDataChanged) {
+        const bounds = allPoints.reduce((acc, point) => {
+          return [
+            [Math.min(acc[0][0], point.lat), Math.min(acc[0][1], point.lon)],
+            [Math.max(acc[1][0], point.lat), Math.max(acc[1][1], point.lon)]
+          ];
+        }, [[allPoints[0].lat, allPoints[0].lon], [allPoints[0].lat, allPoints[0].lon]]);
+        
+        mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
+        previousTrackDataLengthRef.current = allPoints.length;
+      }
     }
 
     return () => {
@@ -138,7 +147,7 @@ export function HeatMap({ trackData }) {
         heatLayerRef.current = null;
       }
     };
-  }, [trackData]);
+  }, [trackData, pointIntensity]);
 
   useEffect(() => {
     return () => {
@@ -149,11 +158,60 @@ export function HeatMap({ trackData }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (heatLayerRef.current && mapInstanceRef.current) {
+      const canvas = mapInstanceRef.current.getPane('overlayPane').querySelector('canvas');
+      if (canvas) {
+        canvas.style.opacity = heatmapOpacity;
+      }
+    }
+  }, [heatmapOpacity]);
+
   return (
     <div className="heatmap-wrapper">
       {trackData.length === 0 && (
         <div className="map-overlay">
           <p>Upload GPX files to see your ski track heatmap</p>
+        </div>
+      )}
+      {trackData.length > 0 && (
+        <div className="heatmap-controls">
+          <div className="control-group">
+            <label htmlFor="opacity-slider" className="control-label">
+              Heatmap Opacity
+            </label>
+            <div className="control-input">
+              <input
+                id="opacity-slider"
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={heatmapOpacity}
+                onChange={(e) => setHeatmapOpacity(parseFloat(e.target.value))}
+                className="control-slider"
+              />
+              <span className="control-value">{Math.round(heatmapOpacity * 100)}%</span>
+            </div>
+          </div>
+          <div className="control-group">
+            <label htmlFor="intensity-slider" className="control-label">
+              Point Intensity
+            </label>
+            <div className="control-input">
+              <input
+                id="intensity-slider"
+                type="range"
+                min="0.05"
+                max="10"
+                step="0.05"
+                value={pointIntensity}
+                onChange={(e) => setPointIntensity(parseFloat(e.target.value))}
+                className="control-slider"
+              />
+              <span className="control-value">{pointIntensity.toFixed(2)}</span>
+            </div>
+          </div>
         </div>
       )}
       <div ref={mapRef} className="heatmap-container" />
