@@ -1,0 +1,63 @@
+export function parseGPX(gpxText) {
+  const parser = new DOMParser();
+  const xmlDoc = parser.parseFromString(gpxText, 'text/xml');
+  
+  const points = [];
+  const trackPoints = xmlDoc.querySelectorAll('trkpt, wpt');
+  
+  trackPoints.forEach(point => {
+    const lat = parseFloat(point.getAttribute('lat'));
+    const lon = parseFloat(point.getAttribute('lon'));
+    
+    if (!isNaN(lat) && !isNaN(lon)) {
+      const elevation = point.querySelector('ele');
+      const elevationValue = elevation ? parseFloat(elevation.textContent) : 0;
+      
+      points.push({
+        lat,
+        lon,
+        elevation: elevationValue
+      });
+    }
+  });
+  
+  return points;
+}
+
+export async function parseGPXFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onload = (event) => {
+      try {
+        const points = parseGPX(event.target.result);
+        resolve({
+          filename: file.name,
+          points
+        });
+      } catch (error) {
+        reject(new Error(`Failed to parse ${file.name}: ${error.message}`));
+      }
+    };
+    
+    reader.onerror = () => {
+      reject(new Error(`Failed to read ${file.name}`));
+    };
+    
+    reader.readAsText(file);
+  });
+}
+
+export async function parseMultipleGPXFiles(files) {
+  const fileArray = Array.from(files);
+  const parsePromises = fileArray.map(file => parseGPXFile(file));
+  
+  try {
+    const results = await Promise.all(parsePromises);
+    return results;
+  } catch (error) {
+    throw error;
+  }
+}
+
+
