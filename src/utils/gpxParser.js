@@ -54,4 +54,51 @@ export async function parseMultipleGPXFiles(files) {
   return Promise.all(parsePromises);
 }
 
+export function filterDownhillPoints(points) {
+  if (points.length < 2) return points;
+  
+  const filteredPoints = [points[0]];
+  const minElevationDrop = 0.5;
+  
+  for (let i = 1; i < points.length; i++) {
+    const prevPoint = points[i - 1];
+    const currentPoint = points[i];
+    
+    if (prevPoint.elevation > 0 && currentPoint.elevation > 0) {
+      const elevationChange = prevPoint.elevation - currentPoint.elevation;
+      
+      if (elevationChange >= minElevationDrop) {
+        filteredPoints.push(currentPoint);
+      }
+    } else if (prevPoint.elevation === 0 || currentPoint.elevation === 0) {
+      filteredPoints.push(currentPoint);
+    }
+  }
+  
+  return filteredPoints;
+}
+
+export function filterUphillPoints(points) {
+  if (points.length < 2) return points;
+  
+  const filteredPoints = [points[0]];
+  
+  for (let i = 1; i < points.length; i++) {
+    const prevPoint = points[i - 1];
+    const currentPoint = points[i];
+    
+    if (prevPoint.elevation > 0 && currentPoint.elevation > 0) {
+      const elevationChange = prevPoint.elevation - currentPoint.elevation;
+      
+      if (elevationChange < 0) {
+        filteredPoints.push(currentPoint);
+      }
+    } else {
+      filteredPoints.push(currentPoint);
+    }
+  }
+  
+  return filteredPoints;
+}
+
 

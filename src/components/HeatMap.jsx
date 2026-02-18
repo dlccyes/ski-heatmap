@@ -19,7 +19,7 @@ export function HeatMap({ trackData }) {
   const skiOverlayRef = useRef(null);
   const [heatmapOpacity, setHeatmapOpacity] = useState(0.7);
   const [pointIntensity, setPointIntensity] = useState(0.2);
-  const previousTrackDataLengthRef = useRef(0);
+  const previousTrackFilesRef = useRef('');
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -102,7 +102,9 @@ export function HeatMap({ trackData }) {
     }
 
     const allPoints = trackData.flatMap(track => track.points);
-    const trackDataChanged = allPoints.length !== previousTrackDataLengthRef.current;
+    const currentTrackFiles = trackData.map(track => track.filename).sort().join(',');
+    const previousTrackFiles = previousTrackFilesRef.current;
+    const trackDataChanged = currentTrackFiles !== previousTrackFiles;
     
     if (allPoints.length > 0 && mapInstanceRef.current) {
       const heatPoints = allPoints.map(point => [point.lat, point.lon, pointIntensity]);
@@ -137,8 +139,8 @@ export function HeatMap({ trackData }) {
         }, [[allPoints[0].lat, allPoints[0].lon], [allPoints[0].lat, allPoints[0].lon]]);
         
         mapInstanceRef.current.fitBounds(bounds, { padding: [50, 50] });
-        previousTrackDataLengthRef.current = allPoints.length;
       }
+      previousTrackFilesRef.current = currentTrackFiles;
     }
 
     return () => {

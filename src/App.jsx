@@ -1,14 +1,15 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { FileUpload } from './components/FileUpload';
 import { HeatMap } from './components/HeatMap';
 import { TrackList } from './components/TrackList';
-import { parseMultipleGPXFiles } from './utils/gpxParser';
+import { parseMultipleGPXFiles, filterDownhillPoints } from './utils/gpxParser';
 import './App.css';
 
 function App() {
   const [tracks, setTracks] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [downhillOnly, setDownhillOnly] = useState(false);
 
   const handleFilesSelected = async (files) => {
     setIsLoading(true);
@@ -34,6 +35,15 @@ function App() {
     setError(null);
   };
 
+  const filteredTracks = useMemo(() => {
+    if (!downhillOnly) return tracks;
+    
+    return tracks.map(track => ({
+      ...track,
+      points: filterDownhillPoints(track.points)
+    }));
+  }, [tracks, downhillOnly]);
+
   return (
     <div className="app">
       <header className="app-header">
@@ -53,6 +63,16 @@ function App() {
 
           {tracks.length > 0 && (
             <>
+              <div className="filter-controls">
+                <label className="filter-toggle">
+                  <input
+                    type="checkbox"
+                    checked={downhillOnly}
+                    onChange={(e) => setDownhillOnly(e.target.checked)}
+                  />
+                  <span>Downhill Only</span>
+                </label>
+              </div>
               <TrackList tracks={tracks} onRemove={handleRemoveTrack} />
               <button className="clear-button" onClick={handleClearAll}>
                 Clear All Tracks
@@ -62,7 +82,7 @@ function App() {
         </div>
 
         <div className="map-panel">
-          <HeatMap trackData={tracks} />
+          <HeatMap trackData={filteredTracks} />
         </div>
       </main>
     </div>
