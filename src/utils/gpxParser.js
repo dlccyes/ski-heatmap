@@ -51,13 +51,7 @@ export async function parseGPXFile(file) {
 export async function parseMultipleGPXFiles(files) {
   const fileArray = Array.from(files);
   const parsePromises = fileArray.map(file => parseGPXFile(file));
-  
-  try {
-    const results = await Promise.all(parsePromises);
-    return results;
-  } catch (error) {
-    throw error;
-  }
+  return Promise.all(parsePromises);
 }
 
 
