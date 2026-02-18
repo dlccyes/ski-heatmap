@@ -59,6 +59,22 @@ export function HeatMap({ trackData }) {
         subdomains: ['a', 'b', 'c']
       });
 
+      const whiteBackgroundLayer = L.gridLayer({
+        attribution: '',
+        tileSize: 256
+      });
+
+      whiteBackgroundLayer.createTile = function () {
+        const tileSize = this.getTileSize();
+        const tile = document.createElement('canvas');
+        tile.width = tileSize.x;
+        tile.height = tileSize.y;
+        const ctx = tile.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, tileSize.x, tileSize.y);
+        return tile;
+      };
+
       const skiOverlayLayer = L.tileLayer('https://tiles.opensnowmap.org/pistes/{z}/{x}/{y}.png', {
         attribution: '© OpenSnowMap contributors',
         maxZoom: 18,
@@ -68,7 +84,8 @@ export function HeatMap({ trackData }) {
 
       baseLayersRef.current = {
         'Topographic (Ski Runs)': topoLayer,
-        'OpenStreetMap': osmLayer
+        'OpenStreetMap': osmLayer,
+        'White Background': whiteBackgroundLayer
       };
 
       overlayLayersRef.current = {

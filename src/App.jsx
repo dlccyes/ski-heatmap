@@ -73,7 +73,7 @@ function App() {
                   <span>Downhill Only</span>
                 </label>
               </div>
-              <TrackList tracks={tracks} onRemove={handleRemoveTrack} />
+              <TrackList tracks={filteredTracks} onRemove={handleRemoveTrack} />
               <button className="clear-button" onClick={handleClearAll}>
                 Clear All Tracks
               </button>
