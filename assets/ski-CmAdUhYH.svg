@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#0f172a" />
+
+  <!-- skis on the ground and poles on the side -->
+  <g stroke="#e5e7eb" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <!-- skis: long, wide, slightly curved tips -->
+    <path d="M10 44 Q20 42 30 44 L54 46" stroke-width="4" />
+    <path d="M12 50 Q22 48 32 50 L56 52" stroke-width="4" />
+
+    <!-- poles: shorter, thinner, upright on the side -->
+    <path d="M46 18 L46 42" stroke-width="2" />
+    <path d="M50 18 L50 42" stroke-width="2" />
+  </g>
+</svg>
+
